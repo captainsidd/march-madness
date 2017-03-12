@@ -8,23 +8,16 @@
 # Import required packages
 import csv
 import random
+import numpy as np
 import matplotlib.pyplot as plt
 import difflib
 
+NUM_SIMULATIONS = 10000
 
 def main():
     # read in file
     all_f4_irl = read_file()
-    # init tournament
-    bracket = generate_init_bracket()
-    all_f4_sim = []
-    # sim division
-    for year in range(0, 30):
-        sim_results = sim_tournament(bracket)
-        all_f4_sim.append(sim_results[0])
-        all_f4_sim.append(sim_results[1])
-        all_f4_sim.append(sim_results[2])
-        all_f4_sim.append(sim_results[3])
+    all_f4_sim = simulate()
     # do some stats, plot results
     stats_for_nerds(all_f4_irl, all_f4_sim)
     plot(all_f4_irl, all_f4_sim)
@@ -45,6 +38,23 @@ def read_file():
             array.append(int(row[3]))
     return array
 
+
+def simulate():
+    random_f4_seeds = []
+    # init tournament
+    bracket = generate_init_bracket()
+    all_f4_sim = []
+    # sim division
+    for run in range(0, NUM_SIMULATIONS):
+        sim_results = sim_tournament(bracket)
+        all_f4_sim.append(sim_results[0])
+        all_f4_sim.append(sim_results[1])
+        all_f4_sim.append(sim_results[2])
+        all_f4_sim.append(sim_results[3])
+    np.random.shuffle(all_f4_sim)
+    for seed in range(0, 128):
+        random_f4_seeds.append(all_f4_sim[seed])
+    return random_f4_seeds
 
 # Initializes a 16 seed division. Store the bracket as a list, with each game
 # being played being a tuple in this format: (higher seed, lower seed)
