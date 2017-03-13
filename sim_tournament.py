@@ -12,14 +12,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import difflib
 
-NUM_SIMULATIONS = 10000
+NUM_SIMULATIONS = 500000  # let's do a half a million simulations
 
 def main():
     # read in file
     all_f4_irl = read_file()
-    all_f4_sim = simulate()
-    # do some stats, plot results
-    stats_for_nerds(all_f4_irl, all_f4_sim)
+    all_f4_sim = simulate(all_f4_irl)
+    # find four random seeds from all_f4_sim
+    # since it's already shuffled, just pick the first four values
+    print('Winning seeds:')
+    for index in range(0, 4):
+        print(all_f4_sim[index])
+    # plot results
     plot(all_f4_irl, all_f4_sim)
 
 
@@ -39,7 +43,9 @@ def read_file():
     return array
 
 
-def simulate():
+# Simulates the specified number of simulations, finds the best random subset
+# of the simulation seeds, and prints out stats on that best random subset.
+def simulate(all_f4_irl):
     random_f4_seeds = []
     # init tournament
     bracket = generate_init_bracket()
@@ -52,8 +58,20 @@ def simulate():
         all_f4_sim.append(sim_results[2])
         all_f4_sim.append(sim_results[3])
     np.random.shuffle(all_f4_sim)
-    for seed in range(0, 128):
-        random_f4_seeds.append(all_f4_sim[seed])
+    # at this point, all seeds will be stored in all_f4_sim
+    # now, need to find best 128 compared to distribution.
+    start = 0
+    end = 128
+    size_sim_seeds = 4 * NUM_SIMULATIONS
+    best_dist = 0 # want to find the best dist, so store the greatest value
+    for seed in range(0, int(size_sim_seeds/128)):
+        dist = stats_for_nerds(all_f4_irl, all_f4_sim[start:end])
+        if dist > best_dist:
+            best_dist = dist
+            random_f4_seeds = all_f4_sim[start:end]
+        start += 128
+        end += 128
+    print('A random sampling of', NUM_SIMULATIONS, 'simulations resulted in a similarity ratio of', best_dist)
     return random_f4_seeds
 
 # Initializes a 16 seed division. Store the bracket as a list, with each game
@@ -145,12 +163,10 @@ def plot(irl, sim):
     return
 
 
-# Prints a statement on the similarity of the distibutions of the historical Final
+# Returns statistics on the similarity of the distibutions of the historical Final
 # 4 seeding and the seeds of the simulated Final 4 teams.
 def stats_for_nerds(all_f4_irl, all_f4_sim):
     sm = difflib.SequenceMatcher(None, all_f4_irl, all_f4_sim)
-    print('On a scale of 0 to 1, 0 being not at all and 1 being completely',
-        'our model rates', round(sm.ratio(), 3), 'to historical March Madness results.')
-    return
+    return round(sm.ratio(), 3)
 
 main()
